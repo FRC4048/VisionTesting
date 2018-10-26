@@ -1,8 +1,9 @@
 import cv2	
 import os
-import math
+from VisionMath import Math
 import numpy
 import time
+import math
 import socket
 from grip import GripPipeline
 
@@ -54,9 +55,9 @@ def init_UDP_client():
 	UDP_PORT = 5005
 	MESSAGE = "Hello world"
 	MESSAGE = MESSAGE*4
-	print "UDP target IP:", UDP_IP
-	print "UDP target port:", UDP_PORT
-	print "message:", MESSAGE
+	print("UDP target IP:" + UDP_IP)
+	print ("UDP target port:" + UDP_PORT)
+	print ("message:" + MESSAGE)
 	
 	sock = socket.socket(socket.AF_INET, #internet
 					      socket.SOCK_DGRAM) #UDP
@@ -70,58 +71,56 @@ def find_fov(ha, va, dfov):
 	return hf
 
 #Horizontal FOV
-def find_distance(hf, cnt1, cnt2):
-	global printStat
-	#clean this up we dont want this to happen twice (once in find_target)
-	x1,y1,w1,h1 = cv2.boundingRect(cnt1)
-	x2,y2,w2,h2 = cv2.boundingRect(cnt2)
+#def find_distance(hf, cnt1, cnt2):
+#	global printStat
+#	#clean this up we dont want this to happen twice (once in find_target)
+#	
+#	Tpx=abs(contour.x2-contour.x1)+(contour.w1/2)+(contour.w2/2)
+#	#print("Tpx =" + str(Tpx))
+#	fovcm = (TWIDTH_CM * HRES)/Tpx
+#	#print("fovcm = "+ str(fovcm))
+#	distance = fovcm/(2*math.tan(math.radians(hf/2)))		
+#	
+#	if printStat: 
+#		print("Object 1 Height = " + str(contour.h1) + "Width = " + str(contour.w1) + "X, Y = " + str(contour.x1) + ","  + str(contour.y1)) 
+#		print("Object 2 Height = " + str(contour.h2) + "Width = " + str(contour.w2) + "X, Y = " + str(contour.x2) + ","  + str(contour.y2)) 
+#		printStat = False
+#
+#	return distance
 
-	Tpx=abs(x2-x1)+(w1/2)+(w2/2)
-	#print("Tpx =" + str(Tpx))
-	fovcm = (TWIDTH_CM * HRES)/Tpx
-	#print("fovcm = "+ str(fovcm))
-	distance = fovcm/(2*math.tan(math.radians(hf/2)))		
-	
-	if printStat: 
-		print("Object 1 Height = " + str(h1) + "Width = " + str(w1) + "X, Y = " + str(x1) + ","  + str(y1)) 
-		print("Object 2 Height = " + str(h2) + "Width = " + str(w2) + "X, Y = " + str(x2) + ","  + str(y2)) 
-		printStat = False
-
-	return distance
-
-def find_angle(hf, cnt1, cnt2):
-	global HRES
-	
-	x1,y1,w1,h1 = cv2.boundingRect(cnt1)
-	x2,y2,w2,h2 = cv2.boundingRect(cnt2)
-	
-	Dpx = (HRES)/(2*math.tan(math.radians(hf/2)))
-	targetMidpoint = (x1+x2)/2		
-	offsetLength =  targetMidpoint - (HRES/2) 	
-	
-	offsetAngle = math.degrees(math.atan(offsetLength/Dpx))
-	
-	return offsetAngle
+#def find_angle(hf, cnt1, cnt2):
+#	global HRES
+#	
+#	Dpx = (HRES)/(2*math.tan(math.radians(hf/2)))
+#	targetMidpoint = (contour.x1+contour.x2)/2		
+#	offsetLength =  targetMidpoint - (HRES/2) 	
+#	
+#	offsetAngle = math.degrees(math.atan(offsetLength/Dpx))
+#	
+#	return offsetAngle
 
 #may change this
-def find_target():
-	rc = ERROR
-	cnt1 = 0
-	cnt2 = 0
-	if len(pipeline.find_contours_output) >= 2:
+#def find_target():
+#	rc = ERROR
+#	cnt1 = 0
+#	cnt2 = 0
+#	if len(pipeline.find_contours_output) >= 2:
 #		cnt1 = max(pipeline.find_contours_output, key = cv2.contourArea)
 #		pipeline.find_contours_output.remove(cnt1)
 #		cnt2 = max(pipeline.find_contours_output, key = cv2.contourArea)
-		largest_contours = sorted(pipeline.find_contours_output, key=cv2.contourArea) [-2:]		
-		cnt1 = largest_contours[0]
-		cnt2 = largest_contours[1]
+#		largest_contours = sorted(pipeline.find_contours_output, key=cv2.contourArea) [-2:]		
+#		cnt1 = largest_contours[0]
+#		cnt2 = largest_contours[1]
 
-		x1,y1,w1,h1 = cv2.boundingRect(cnt1)
-		x2,y2,w2,h2 = cv2.boundingRect(cnt2)
+		#x1,y1,w1,h1 = cv2.boundingRect(cnt1)
+		#x2,y2,w2,h2 = cv2.boundingRect(cnt2)
 
-		if (float(h1)/float(h2) >= 0.8 and float(h1)/float(h2) <= 1.2) and (float(w1)/float(w2) >= 0.8 and float(w1)/float(w2) <= 1.2):
-			rc = SUCCESS
-	return cnt1, cnt2, rc
+#		if (float(h1)/float(h2) >= 0.8 and float(h1)/float(h2) <= 1.2) and (float(w1)/float(w2) >= 0.8 and float(w1)/float(w2) <= 1.2):			rc = SUCCESS
+#	return cnt1, cnt2, rc
+
+
+
+
 
 #Configuring the camera to look the way we want	
 config_microsoft_cam()
@@ -132,6 +131,7 @@ M_HFOV = find_fov(M_HA, M_VA, M_DFOV)
 
 
 pipeline = GripPipeline()
+vision_math = Math()
 
 #Video Capture stuff
 cam = cv2.VideoCapture(0)
@@ -147,7 +147,6 @@ while(True):
 	processStartTime = cv2.getTickCount()
 	pipeline.process(im) 
 	processEndTime = cv2.getTickCount()
-	cnt1, cnt2, rc = find_target()                
 	processTime = (processEndTime - processStartTime)/cv2.getTickFrequency()
 	if printTime:
 		print("Frame processing time:" +  str(processTime) + "\nFrame Capture Time:" + str(captureTime))
@@ -160,13 +159,13 @@ while(True):
 	elif event == ord('p'):
 		print(len(pipeline.find_contours_output))
 		print
-	elif event == ord('d') and rc == SUCCESS:
-		distance = find_distance(M_HFOV, cnt1, cnt2)
+	elif event == ord('d'):
+		distance = vision_math.find_distance(M_HFOV)
 		print("distance = " + str(distance))
 	elif event == ord('s'):
 		printStat = True
 	elif event == ord('a'):
-		angle = find_angle(M_HFOV, cnt1, cnt2)
+		angle = vision_math.find_angle(M_HFOV)
 		print("angle = " + str(angle))
 	elif event == ord('q'):
 		break 
