@@ -9,40 +9,43 @@ VRES = (M_VA * HRES)/M_HA #360
 #Target dimentions
 TWIDTH_CM = 25
 
+#return codes
+ERROR = -1
+SUCCESS = 0
+
 printStat = False
 
 class Math():
 
 	@staticmethod
-	def find_distance(hf):
-		contour1 = Contour()
-		contour2 = Contour()
+	def find_distance(cnt1, cnt2, hf):
+		if cnt1.x == 0 or cnt2.x == 0:
+			return 0, ERROR  
 		global printStat
 
-		Tpx=abs(contour2.x2-contour1.x1)+(contour1.w1/2)+(contour2.w2/2)
+		Tpx=abs(cnt2.x-cnt1.x)+(cnt1.w/2)+(cnt2.w/2)
 		#print("Tpx =" + str(Tpx))
 		fovcm = (TWIDTH_CM * HRES)/Tpx
 		#print("fovcm = "+ str(fovcm))
 		distance = fovcm/(2*math.tan(math.radians(hf/2)))
 	
 		if printStat:
-			print("Object 1 Height = " + str(contour1.h1) + "Width = " + str(contour1.w1) + "X, Y = " + str(contour1.x1) + ","  + str(contour1.y1))
-			print("Object 2 Height = " + str(contour1.h2) + "Width = " + str(contour2.w2) + "X, Y = " + str(contour2.x2) + ","  + str(contour2.y2))
+			print("Object 1 Height = " + str(cnt1.h) + "Width = " + str(cnt1.w) + "X, Y = " + str(cnt1.x) + ","  + str(cnt2.y))
+			print("Object 2 Height = " + str(cnt2.h) + "Width = " + str(cnt2.w) + "X, Y = " + str(cnt2.x) + ","  + str(cnt2.y))
 			printStat = False
-		return distance
+		return distance, SUCCESS
 
 
 	@staticmethod
-	def find_angle(hf):
-		contour1 = Contour()
-		contour2 = Contour()
+	def find_angle(cnt1, cnt2, hf):
 		global HRES
-		
+		if cnt1.x == 0 or cnt2.x == 0:
+			return 0, ERROR  
 		Dpx = (HRES)/(2*math.tan(math.radians(hf/2)))
-		targetMidpoint = (contour1.x1+contour2.x2)/2
+		targetMidpoint = (cnt1.x+cnt2.x)/2
 		offsetLength =  targetMidpoint - (HRES/2)
 
 		offsetAngle = math.degrees(math.atan(offsetLength/Dpx))
 	
-		return offsetAngle
+		return offsetAngle, SUCCESS
 

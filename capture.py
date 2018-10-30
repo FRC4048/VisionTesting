@@ -6,7 +6,7 @@ import time
 import math
 import socket
 from grip import GripPipeline
-
+from contour import Contour
 from networktables import NetworkTables
 import logging 
 
@@ -99,25 +99,25 @@ def find_fov(ha, va, dfov):
 #	
 #	return offsetAngle
 
-#may change this
-#def find_target():
-#	rc = ERROR
-#	cnt1 = 0
-#	cnt2 = 0
-#	if len(pipeline.find_contours_output) >= 2:
-#		cnt1 = max(pipeline.find_contours_output, key = cv2.contourArea)
-#		pipeline.find_contours_output.remove(cnt1)
-#		cnt2 = max(pipeline.find_contours_output, key = cv2.contourArea)
-#		largest_contours = sorted(pipeline.find_contours_output, key=cv2.contourArea) [-2:]		
-#		cnt1 = largest_contours[0]
-#		cnt2 = largest_contours[1]
 
-		#x1,y1,w1,h1 = cv2.boundingRect(cnt1)
-		#x2,y2,w2,h2 = cv2.boundingRect(cnt2)
+def find_target(cnt1, cnt2):
+        rc = ERROR
+        if len(pipeline.find_contours_output) >= 2:
+            #		    cnt1 = max(pipeline.find_contours_output, key = cv2.contourArea)
+            #		    pipeline.find_contours_output.remove(cnt1)
+            #		    cnt2 = max(pipeline.find_contours_output, key = cv2.contourArea)
+            	largest_contours = sorted(pipeline.find_contours_output, key=cv2.contourArea)[-2:]
+		cnt1.cnt = largest_contours[0]
+		cnt2.cnt = largest_contours[1]
+		cnt1.x, cnt1.y, cnt1.w, cnt1.h = cv2.boundingRect(cnt1.cnt)
+		cnt2.x, cnt2.y, cnt2.w, cnt2.h = cv2.boundingRect(cnt2.cnt)
 
-#		if (float(h1)/float(h2) >= 0.8 and float(h1)/float(h2) <= 1.2) and (float(w1)/float(w2) >= 0.8 and float(w1)/float(w2) <= 1.2):			rc = SUCCESS
-#	return cnt1, cnt2, rc
-
+            	if (float(cnt1.h) / float(cnt2.h) >= 0.8 and float(cnt1.h) / float(cnt2.h) <= 1.2) and (float(cnt1.w) / float(cnt2.w) >= 0.8 and float(cnt1.w) / float(cnt2.w) <= 1.2):
+            		rc = SUCCESS
+	if rc == ERROR:
+		cnt1.reset()
+		cnt2.reset()
+	return rc
 
 
 
@@ -138,7 +138,12 @@ cam = cv2.VideoCapture(0)
 #Set Camera resoultion
 cam.set(3, HRES)
 cam.set(4, VRES)
-while(True):
+cnt1 = Contour()
+cnt2 = Contour()
+count = 0
+t_end = time.time() + 10
+while time.time() <= t_end:
+	count = count+1
 	captureStartTime = cv2.getTickCount()
 	s, im = cam.read() # captures image
 	captureEndTime = cv2.getTickCount()
@@ -148,6 +153,9 @@ while(True):
 	pipeline.process(im) 
 	processEndTime = cv2.getTickCount()
 	processTime = (processEndTime - processStartTime)/cv2.getTickFrequency()
+	find_target(cnt1, cnt2)
+	distance, distanceRC = vision_math.find_distance(cnt1, cnt2, M_HFOV)
+	angle, angleRC = vision_math.find_angle(cnt1, cnt2, M_HFOV)
 	if printTime:
 		print("Frame processing time:" +  str(processTime) + "\nFrame Capture Time:" + str(captureTime))
                                      	
@@ -160,15 +168,17 @@ while(True):
 		print(len(pipeline.find_contours_output))
 		print
 	elif event == ord('d'):
-		distance = vision_math.find_distance(M_HFOV)
-		print("distance = " + str(distance))
+		if distanceRC == SUCCESS:		
+			print("distance = " + str(distance))
 	elif event == ord('s'):
 		printStat = True
 	elif event == ord('a'):
-		angle = vision_math.find_angle(M_HFOV)
-		print("angle = " + str(angle))
+		if angleRC == SUCCESS:			
+			print("angle = " + str(angle))
 	elif event == ord('q'):
 		break 
+print(count/10)
+
 
 cam.release()
 cv2.destroyAllWindows()
