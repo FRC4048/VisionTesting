@@ -37,7 +37,7 @@ class Math():
 		contour1 = Contour()
 		contour2 = Contour()
 		global HRES
-	
+		
 		Dpx = (HRES)/(2*math.tan(math.radians(hf/2)))
 		targetMidpoint = (contour1.x1+contour2.x2)/2
 		offsetLength =  targetMidpoint - (HRES/2)
