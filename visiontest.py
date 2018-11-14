@@ -10,6 +10,7 @@ import socket
 from grip import GripPipeline
 from contour import Contour
 from networktables import NetworkTables
+from networktables.util import ntproperty
 from Constants import Constant as c
 import logging 
 import time
@@ -33,6 +34,30 @@ i = 1
 
 printTime = False
 printStat = False
+
+def init_network_tables():
+	logging.basicConfig(level=logging.DEBUG)
+	#NetworkTables.enableVerboseLogging()
+	NetworkTables.initialize(server='10.11.13.109')
+		
+	while (not NetworkTables.isConnected()):
+		time.sleep(1)
+		print("waiting")
+
+
+def init_UDP_client():
+	UDP_IP = "10.11.13.109"	
+	#UDP_IP  = "10.12.1.59"
+	UDP_PORT = 5005
+	MESSAGE = "Hello world"
+	MESSAGE = MESSAGE*4
+	print("UDP target IP:" + str(UDP_IP))
+	print ("UDP target port:" + str(UDP_PORT))
+	print ("message:", MESSAGE)
+	
+	sock = socket.socket(socket.AF_INET, #internet
+					      socket.SOCK_DGRAM) #UDP
+	sock.sendto(MESSAGE, (UDP_IP, UDP_PORT))
 
 
 def config_microsoft_cam():
@@ -77,7 +102,10 @@ if __name__ == "__main__":
 	runtime = 10
 	M_HFOV = find_fov(M_HA, M_VA, M_DFOV)
 	config_microsoft_cam()
-   # code borrowed from Adrian
+	init_network_tables()
+	table = NetworkTables.getTable('SmartDashboard')	
+	#init_UDP_client()	
+# code borrowed from Adrian
    # https://www.pyimagesearch.com/2015/12/21/increasing-webcam-fps-with-python-and-opencv/
 	cam = WebcamVideoStream(src=0).start()
   	pipeline=GripPipeline()
@@ -96,23 +124,21 @@ if __name__ == "__main__":
 			find_target(cnt1, cnt2)
 			distance, distanceRC = vision_math.find_distance(cnt1, cnt2, M_HFOV)
 			angle, angleRC = vision_math.find_angle(cnt1, cnt2, M_HFOV)
-#			frame = cv2.resize(frame, (0,0), fx=0.5, fy=0.5) 
+			#frame = cv2.resize(frame, (0,0), fx=0.5, fy=0.5) 
 			
-			#cv2.imshow("Frame", frame)
+			cv2.imshow("Frame", frame)
 			fps.update()
 
 	     
-   			event = cv2.waitKey(25) & 0xFF
-			if event == ord('c'):
-				cv2.imwrite("./microsoft"+str(i)+".jpg", im)
-				print("microsoft"+str(i))		
-				i=i+1
-			elif event == ord('p'):
+   			event = cv2.waitKey(1) & 0xFF
+			if event == ord('p'):
 				print(len(pipeline.find_contours_output))
 				print
 			elif event == ord('d'):
 				if distanceRC == SUCCESS:		
 					print("distance = " + str(distance))
+					#distanceNT = distance
+					table.putNumber('distance', distance)			
 			elif event == ord('s'):
 				printStat = True
 			elif event == ord('a'):
@@ -123,6 +149,7 @@ if __name__ == "__main__":
 	fps.stop()      
 	cv2.destroyAllWindows()
 	cam.stop()
-   
+   	
+	
 	print("[INFO] elasped time: {:.2f}".format(fps.elapsed()))
 	print("[INFO] approx. FPS: {:.2f}".format(fps.fps()))
