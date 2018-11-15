@@ -13,7 +13,6 @@ from networktables import NetworkTables
 from networktables.util import ntproperty
 from Constants import Constant as c
 import logging 
-import time
 
 #Aspect ratio (microsoft)
 M_HA = 16
@@ -34,6 +33,8 @@ i = 1
 
 printTime = False
 printStat = False
+optionNetwork = False
+optionImage = True
 
 def init_network_tables():
 	logging.basicConfig(level=logging.DEBUG)
@@ -102,33 +103,42 @@ if __name__ == "__main__":
 	runtime = 10
 	M_HFOV = find_fov(M_HA, M_VA, M_DFOV)
 	config_microsoft_cam()
-	init_network_tables()
-	table = NetworkTables.getTable('SmartDashboard')	
+	if optionNetwork:
+		init_network_tables()
+		table = NetworkTables.getTable('SmartDashboard')	
 	#init_UDP_client()	
-# code borrowed from Adrian
-   # https://www.pyimagesearch.com/2015/12/21/increasing-webcam-fps-with-python-and-opencv/
+	# code borrowed from Adrian
+	# https://www.pyimagesearch.com/2015/12/21/increasing-webcam-fps-with-python-and-opencv/
 	cam = WebcamVideoStream(src=0).start()
   	pipeline=GripPipeline()
 
 	cnt1 = Contour()
  	cnt2 = Contour()	
+	font = cv2.FONT_HERSHEY_SIMPLEX
+
 
 	fps = FPS().start()
 	
 	t_end = time.time() + runtime
-
 	while time.time() < t_end:
 		frame = cam.read()
-		if frame.any() and frame is not None:
+		if frame is not None:
 			pipeline.process(frame)
 			find_target(cnt1, cnt2)
 			distance, distanceRC = vision_math.find_distance(cnt1, cnt2, M_HFOV)
 			angle, angleRC = vision_math.find_angle(cnt1, cnt2, M_HFOV)
-			#frame = cv2.resize(frame, (0,0), fx=0.5, fy=0.5) 
-			
-			cv2.imshow("Frame", frame)
-			fps.update()
+			if optionImage:			
+				#frame = cv2.resize(frame, (0,0), fx=0.5, fy=0.5) 
+				cv2.rectangle(frame, (cnt1.x, cnt1.y), (cnt1.x + cnt1.w, cnt1.y + cnt1.h), (255, 0, 0), 2)
+				cv2.rectangle(frame, (cnt2.x, cnt2.y), (cnt2.x + cnt2.w, cnt2.y + cnt2.h), (255, 0, 0), 2)
+				middle = (abs(cnt1.x+cnt2.x)/2, abs(cnt1.y+cnt2.y)/2)
+				if distanceRC == SUCCESS:
+					cv2.putText(frame, 'D='+str(int(round(distance))), middle, font, 0.5 , (0, 0, 255), 1, cv2.LINE_4)
+				if angleRC == SUCCESS:
+					cv2.putText(frame, 'A='+str(int(round(angle))), (middle[0],middle[1]+30), font, 0.5 , (0, 0, 255), 1, cv2.LINE_4)
 
+				cv2.imshow("Frame", frame)
+			fps.update()
 	     
    			event = cv2.waitKey(1) & 0xFF
 			if event == ord('p'):
@@ -138,7 +148,8 @@ if __name__ == "__main__":
 				if distanceRC == SUCCESS:		
 					print("distance = " + str(distance))
 					#distanceNT = distance
-					table.putNumber('distance', distance)			
+					if optionNetwork:
+						table.putNumber('distance', distance)			
 			elif event == ord('s'):
 				printStat = True
 			elif event == ord('a'):
