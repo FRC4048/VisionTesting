@@ -29,9 +29,12 @@ i = 1
 
 printStat = False
 
+#initializing network tables
 def init_network_tables():
 	logging.basicConfig(level=logging.DEBUG)
 	#NetworkTables.enableVerboseLogging()
+
+	#this IP address should be replaced by the RoboRIO's IP
 	NetworkTables.initialize(server='10.11.13.109')
 	nt_timeout = time.time() + c.NT_TIMEOUT	
 	while (not NetworkTables.isConnected() and time.time() < nt_timeout):
@@ -40,6 +43,7 @@ def init_network_tables():
 	if (not NetworkTables.isConnected()):
 		print "Could not connect to network tables"	
 
+#not using this for now
 def init_UDP_client():
 	UDP_IP = "10.11.13.109"	
 	UDP_PORT = 5005
@@ -53,7 +57,7 @@ def init_UDP_client():
 					      socket.SOCK_DGRAM) #UDP
 	sock.sendto(MESSAGE, (UDP_IP, UDP_PORT))
 
-
+#finds the target and makes sure that what it's seeing is in its correct orientation, permutation, and proportion
 def find_target(cnt1, cnt2):
 	rc = c.SUCCESS
 	if len(pipeline.find_contours_output) < 2:
@@ -91,6 +95,7 @@ def find_target(cnt1, cnt2):
 
 
 if __name__ == "__main__":
+	#parses the arguments
 	parser = argparse.ArgumentParser()
 	parser.add_argument("runtime", type=int, nargs='?', help="runtime in seconds", default=10)
 	parser.add_argument("-d", "--debug", help="turn debug on", action="store_true")
@@ -98,24 +103,30 @@ if __name__ == "__main__":
 	parser.add_argument("-i", "--image", help="display image", action="store_true")
 	args = parser.parse_args()
 	
+	#instantiates the math and camera objects
 	vision_math = Math()
 	camera = Camera("Microsoft", c.M_HA, c.M_VA, c.M_DFOV)    # Microsoft camera
 	#camera = Camera("mac", c.MAC_HA, c.MAC_VA, c.MAC_DFOV)    # mac internal camera
 	camera.config()
 
+	#initializes network tables
 	if args.network:
 		init_network_tables()
 		table = NetworkTables.getTable('SmartDashboard')	
 	#init_UDP_client()	
 	# code borrowed from Adrian
 	# https://www.pyimagesearch.com/2015/12/21/increasing-webcam-fps-with-python-and-opencv/
+
+	#starts streaming the camera
 	stream = WebcamVideoStream(src=0).start()
   	pipeline=GripPipeline()
 
+	#instantiates contours because we have 2 blobs in our target
 	cnt1 = Contour()
  	cnt2 = Contour()	
 	font = cv2.FONT_HERSHEY_SIMPLEX
 
+	#counts how many good frames it got per second as it was running
 	fps = FPS().start()
 	
 	t_end = time.time() + args.runtime
@@ -143,23 +154,16 @@ if __name__ == "__main__":
    			event = cv2.waitKey(1) & 0xFF
 			if event == ord('p'):
 				print(len(pipeline.find_contours_output))
-				print
-			elif event == ord('d'):
-				if distanceRC == c.SUCCESS:		
-			#		print("distance = " + str(distance))
-					#distanceNT = distance
-					if args.network:
-						table.putNumber('distance', distance)			
+				print		
 			elif event == ord('s'):
 				printStat = True
-			elif event == ord('a'):
-				if angleRC == c.SUCCESS:			
-					print("angle = " + str(angle))
 			elif event == ord('q'):
 				break 
+
+	#cleanups
 	fps.stop()      
 	cv2.destroyAllWindows()
 	stream.stop()
 	
-#	print("[INFO] elasped time: {:.2f}".format(fps.elapsed()))
-	#print("[INFO] approx. FPS: {:.2f}".format(fps.fps()))	
+	print("[INFO] elasped time: {:.2f}".format(fps.elapsed()))
+	print("[INFO] approx. FPS: {:.2f}".format(fps.fps()))	
