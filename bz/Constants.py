@@ -10,7 +10,7 @@ class Constant():
 	MAC_DFOV = 80  ### this is just a guess....
 	
 
-	HRES = 640
+	HRES = 320
 	VRES = (M_VA * HRES)/M_HA #360
 	#Target dimentions
 	TWIDTH_CM = 25

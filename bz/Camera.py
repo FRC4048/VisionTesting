@@ -11,7 +11,10 @@ class Camera():
 
 		#These formulas are found on: vrguy.blogspot.com/2013/04/converting-diagonal-field-of-view-and.html
 		da = math.sqrt(self.ha*self.ha + self.va*self.va)	
-		self.hfov = math.degrees(math.atan(math.tan(math.radians(self.dfov/2))*(self.ha/da))*2)		
+		self.hfov = math.degrees(math.atan(math.tan(math.radians(self.dfov/2))*(self.ha/da))*2)
+		self.vfov = math.degrees(math.atan(math.tan(math.radians(self.dfov/2))*(self.va/da))*2)
+		print self.hfov
+		print self.vfov
 
 	def config(self):
 		if self.model == "Microsoft":

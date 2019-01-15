@@ -1,11 +1,7 @@
 from contour import Contour
+from Constants import Constant as c
 import math
-M_HA = 16
-M_VA = 9
-M_DFOV = 68.5
 
-HRES = 640
-VRES = (M_VA * HRES)/M_HA #360
 #Target dimentions
 TWIDTH_CM = 25
 
@@ -25,7 +21,7 @@ class Math():
 
 		Tpx=abs(cnt2.x-cnt1.x)+(cnt1.w/2)+(cnt2.w/2)
 		#print("Tpx =" + str(Tpx))
-		fovcm = (TWIDTH_CM * HRES)/Tpx
+		fovcm = (TWIDTH_CM * c.HRES)/Tpx
 		#print("fovcm = "+ str(fovcm))
 		distance = fovcm/(2*math.tan(math.radians(hf/2)))
 	
@@ -38,14 +34,33 @@ class Math():
 
 	@staticmethod
 	def find_angle(cnt1, cnt2, hf):
-		global HRES
 		if cnt1.x == 0 or cnt2.x == 0:
 			return 0, ERROR  
-		Dpx = (HRES)/(2*math.tan(math.radians(hf/2)))
+		Dpx = (c.HRES)/(2*math.tan(math.radians(hf/2)))
 		targetMidpoint = (cnt1.x+cnt2.x)/2
-		offsetLength =  targetMidpoint - (HRES/2)
+		offsetLength =  targetMidpoint - (c.HRES/2)
 
 		offsetAngle = math.degrees(math.atan(offsetLength/Dpx))
 	
 		return offsetAngle, SUCCESS
+
+
+	@staticmethod
+	def find_tx_ty(cnt1, cnt2, hf, vf):
+		middlex = (cnt1.x + cnt2.x)/2
+		middley = (cnt1.y + cnt2.y)/2
+		offsetx = middlex - c.HRES/2
+		offsety = middley - c.VRES/2
+		return (hf/c.HRES) * offsetx, (vf/c.VRES) * offsety * -1
+	
+	@staticmethod
+	def find_tx_ty_math(middlex, middley, hf, vf):
+		offsetx = middlex - c.HRES/2
+		offsety = middley - c.VRES/2
+		print "X: ", (hf/c.HRES) * offsetx, "  Y: ", (vf/c.VRES) * offsety * -1
+		
+
+
+
+
 

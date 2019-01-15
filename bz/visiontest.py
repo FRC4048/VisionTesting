@@ -76,7 +76,6 @@ def find_target(cnt1, cnt2):
 		x, y, w, h = cv2.boundingRect(cnt2.cnt)
 		cnt2.setvars(minRect, w, h)
 		
-		print  cnt1.h, cnt2.h, cnt1.w, cnt2.w 
 		# check bounding box angles 
 		if (abs(cnt1.angle) < abs(cnt2.angle) ) or  (abs(cnt1.angle)  + abs(cnt2.angle)  > 110) or (abs(cnt1.angle)  + abs(cnt2.angle)  <70):
 			rc = c.ERROR
@@ -103,9 +102,6 @@ if __name__ == "__main__":
 	camera = Camera("Microsoft", c.M_HA, c.M_VA, c.M_DFOV)    # Microsoft camera
 	#camera = Camera("mac", c.MAC_HA, c.MAC_VA, c.MAC_DFOV)    # mac internal camera
 	camera.config()
-	
-	HRES = 320
-	VRES = (camera.va * HRES)/camera.ha #360
 
 	if args.network:
 		init_network_tables()
@@ -127,28 +123,30 @@ if __name__ == "__main__":
 		frame = stream.read()
 		if frame is not None:
 			pipeline.process(frame)
-			find_target(cnt1, cnt2)
-			distance, distanceRC = vision_math.find_distance(cnt1, cnt2, camera.hfov)
-			angle, angleRC = vision_math.find_angle(cnt1, cnt2, camera.hfov)
+			rc = find_target(cnt1, cnt2)
+			if rc == c.ERROR:
+				tx, ty, tv = 0, 0, 0
+			else:
+				tx, ty = vision_math.find_tx_ty(cnt1, cnt2, camera.hfov, camera.vfov)
+				tv = 1
+
 			if args.image:			
 				cv2.circle(frame, (cnt1.x , cnt1.y), 5, (255, 0, 0), 2)
 				cv2.circle(frame, (cnt2.x , cnt2.y), 5, (255, 0, 0), 2)
 				middle = (abs(cnt1.x+cnt2.x)/2, abs(cnt1.y+cnt2.y)/2)
-				if distanceRC == c.SUCCESS:
-					cv2.putText(frame, 'D='+str(int(round(distance))), middle, font, 0.5 , (0, 0, 255), 1, cv2.LINE_4)
-				if angleRC == c.SUCCESS:
-					cv2.putText(frame, 'A='+str(int(round(angle))), (middle[0],middle[1]+30), font, 0.5 , (0, 0, 255), 1, cv2.LINE_4)
+				if rc == c.SUCCESS:
+					cv2.putText(frame, 'tx='+str(int(round(tx))) + '   ty='+str(int(round(ty))), middle, font, 0.5 , (0, 0, 255), 1, cv2.LINE_4)
 
 				cv2.imshow("Frame", frame)
 			fps.update()
-	     
+			
    			event = cv2.waitKey(1) & 0xFF
 			if event == ord('p'):
 				print(len(pipeline.find_contours_output))
 				print
 			elif event == ord('d'):
 				if distanceRC == c.SUCCESS:		
-					print("distance = " + str(distance))
+			#		print("distance = " + str(distance))
 					#distanceNT = distance
 					if args.network:
 						table.putNumber('distance', distance)			
@@ -163,5 +161,5 @@ if __name__ == "__main__":
 	cv2.destroyAllWindows()
 	stream.stop()
 	
-	print("[INFO] elasped time: {:.2f}".format(fps.elapsed()))
-	print("[INFO] approx. FPS: {:.2f}".format(fps.fps()))
+#	print("[INFO] elasped time: {:.2f}".format(fps.elapsed()))
+	#print("[INFO] approx. FPS: {:.2f}".format(fps.fps()))	
