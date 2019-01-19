@@ -128,11 +128,13 @@ if __name__ == "__main__":
 
 	#counts how many good frames it got per second as it was running
 	fps = FPS().start()
+	old_counter = 0
 	
 	t_end = time.time() + args.runtime
 	while time.time() < t_end:
-		frame = stream.read()
-		if frame is not None:
+		(counter, frame) = stream.read()
+		if frame is not None and counter <> old_counter:
+                        old_counter = counter
 			pipeline.process(frame)
 			rc = find_target(cnt1, cnt2)
 			if rc == c.ERROR:
@@ -150,6 +152,7 @@ if __name__ == "__main__":
 
 				cv2.imshow("Frame", frame)
 			fps.update()
+			#print 'a'
 			
    			event = cv2.waitKey(1) & 0xFF
 			if event == ord('p'):
@@ -159,6 +162,8 @@ if __name__ == "__main__":
 				printStat = True
 			elif event == ord('q'):
 				break 
+		else:
+                   time.sleep(0.01)
 
 	#cleanups
 	fps.stop()      

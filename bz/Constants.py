@@ -12,8 +12,6 @@ class Constant():
 
 	HRES = 320
 	VRES = (M_VA * HRES)/M_HA #360
-	#Target dimentions
-	TWIDTH_CM = 25
 
 	# Network tables constants
 	NT_TIMEOUT = 10
